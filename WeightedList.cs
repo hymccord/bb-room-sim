@@ -1,10 +1,9 @@
 ﻿// License: MIT
 // Source, Docs, Issues: https://github.com/cdanek/kaimira-weighted-list/
 
-using System.Text;
-using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Text;
+
 using static KaimiraGames.WeightErrorHandlingType;
 
 namespace KaimiraGames
@@ -47,64 +46,17 @@ namespace KaimiraGames
             if (Count == 0) throw new InvalidOperationException();
             int nextInt = _rand.Next(Count);
             if (_areAllProbabilitiesIdentical) return _list[nextInt];
-            int nextProbability = _rand.Next(_totalWeight);
+            int nextProbability = _rand.Next(TotalWeight);
             return (nextProbability < _probabilities[nextInt]) ? _list[nextInt] : _list[_alias[nextInt]];
         }
 
-        public void AddWeightToAll(int weight)
-        {
-            if (weight + _minWeight <= 0 && BadWeightErrorHandling == ThrowExceptionOnAdd)
-                throw new ArgumentException($"Subtracting {-1 * weight} from all items would set weight to non-positive for at least one element.");
-            for (int i = 0; i < Count; i++)
-            {
-                _weights[i] = FixWeight(_weights[i] + weight);
-            }
-            Recalculate();
-        }
-
-        public void SubtractWeightFromAll(int weight) => AddWeightToAll(weight * -1);
-
-        public void SetWeightOfAll(int weight)
-        {
-            if (weight <= 0 && BadWeightErrorHandling == ThrowExceptionOnAdd) throw new ArgumentException("Weight cannot be non-positive.");
-            for (int i = 0; i < Count; i++) _weights[i] = FixWeight(weight);
-            Recalculate();
-        }
-
-        public int TotalWeight => _totalWeight;
-
-        /// <summary>
-        /// Minimum weight in the structure. 0 if Count == 0.
-        /// </summary>
-        public int MinWeight => _minWeight;
-
-        /// <summary>
-        /// Maximum weight in the structure. 0 if Count == 0.
-        /// </summary>
-        public int MaxWeight => _maxWeight;
+        public int TotalWeight { get; private set; }
 
         public IReadOnlyList<T> Items => _list.AsReadOnly();
 
         public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => _list.GetEnumerator();
-
-        public void Add(T item, int weight)
-        {
-            _list.Add(item);
-            _weights.Add(FixWeight(weight));
-            Recalculate();
-        }
-
-        public void Add(ICollection<WeightedListItem<T>> listItems)
-        {
-            foreach (WeightedListItem<T> listItem in listItems)
-            {
-                _list.Add(listItem._item);
-                _weights.Add(FixWeight(listItem._weight));
-            }
-            Recalculate();
-        }
 
         public void Clear()
         {
@@ -113,50 +65,17 @@ namespace KaimiraGames
             Recalculate();
         }
 
-        public void Contains(T item) => _list.Contains(item);
-
         public int IndexOf(T item) => _list.IndexOf(item);
-
-        public void Insert(int index, T item, int weight)
-        {
-            _list.Insert(index, item);
-            _weights.Insert(index, FixWeight(weight));
-            Recalculate();
-        }
-
-        public void Remove(T item)
-        {
-            int index = IndexOf(item);
-            RemoveAt(index);
-            Recalculate();
-        }
-
-        public void RemoveAt(int index)
-        {
-            _list.RemoveAt(index);
-            _weights.RemoveAt(index);
-            Recalculate();
-        }
-
-        public T this[int index] => _list[index];
 
         public int Count => _list.Count;
 
-        public void SetWeight(T item, int newWeight) => SetWeightAtIndex(IndexOf(item), FixWeight(newWeight));
-
         public int GetWeightOf(T item) => GetWeightAtIndex(IndexOf(item));
-
-        public void SetWeightAtIndex(int index, int newWeight)
-        {
-            _weights[index] = FixWeight(newWeight);
-            Recalculate();
-        }
 
         public int GetWeightAtIndex(int index) => _weights[index];
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append("WeightedList<");
             sb.Append(typeof(T).Name);
             sb.Append(">: TotalWeight:");
@@ -179,12 +98,11 @@ namespace KaimiraGames
             return sb.ToString();
         }
 
-        private readonly List<T> _list = new List<T>();
-        private readonly List<int> _weights = new List<int>();
-        private readonly List<int> _probabilities = new List<int>();
-        private readonly List<int> _alias = new List<int>();
+        private readonly List<T> _list = new();
+        private readonly List<int> _weights = new();
+        private readonly List<int> _probabilities = new();
+        private readonly List<int> _alias = new();
         private readonly Random _rand;
-        private int _totalWeight;
         private bool _areAllProbabilitiesIdentical = false;
         private int _minWeight;
         private int _maxWeight;
@@ -194,7 +112,7 @@ namespace KaimiraGames
         /// </summary>
         private void Recalculate()
         {
-            _totalWeight = 0;
+            TotalWeight = 0;
             _areAllProbabilitiesIdentical = false;
             _minWeight = 0;
             _maxWeight = 0;
@@ -203,9 +121,9 @@ namespace KaimiraGames
             _alias.Clear(); // STEP 1
             _probabilities.Clear(); // STEP 1
 
-            List<int> scaledProbabilityNumerator = new List<int>(Count);
-            List<int> small = new List<int>(Count); // STEP 2
-            List<int> large = new List<int>(Count); // STEP 2
+            List<int> scaledProbabilityNumerator = new(Count);
+            List<int> small = new(Count); // STEP 2
+            List<int> large = new(Count); // STEP 2
             foreach (int weight in _weights)
             {
                 if (isFirst)
@@ -215,7 +133,7 @@ namespace KaimiraGames
                 }
                 _minWeight = (weight < _minWeight) ? weight : _minWeight;
                 _maxWeight = (_maxWeight < weight) ? weight : _maxWeight;
-                _totalWeight += weight;
+                TotalWeight += weight;
                 scaledProbabilityNumerator.Add(weight * Count); // STEP 3 
                 _alias.Add(0);
                 _probabilities.Add(0);
@@ -231,7 +149,7 @@ namespace KaimiraGames
             // STEP 4
             for (int i = 0; i < Count; i++)
             {
-                if (scaledProbabilityNumerator[i] < _totalWeight)
+                if (scaledProbabilityNumerator[i] < TotalWeight)
                     small.Add(i);
                 else
                     large.Add(i);
@@ -246,9 +164,9 @@ namespace KaimiraGames
                 large.RemoveAt(large.Count - 1);
                 _probabilities[l] = scaledProbabilityNumerator[l]; // 5.3
                 _alias[l] = g; // 5.4
-                int tmp = scaledProbabilityNumerator[g] + scaledProbabilityNumerator[l] - _totalWeight; // 5.5, even though using ints for this algorithm is stable
+                int tmp = scaledProbabilityNumerator[g] + scaledProbabilityNumerator[l] - TotalWeight; // 5.5, even though using ints for this algorithm is stable
                 scaledProbabilityNumerator[g] = tmp;
-                if (tmp < _totalWeight)
+                if (tmp < TotalWeight)
                     small.Add(g); // 5.6 the large is now in the small pile
                 else
                     large.Add(g); // 5.7 add the large back to the large pile
@@ -259,7 +177,7 @@ namespace KaimiraGames
             {
                 int g = large[^1]; // 6.1
                 large.RemoveAt(large.Count - 1);
-                _probabilities[g] = _totalWeight; //6.1
+                _probabilities[g] = TotalWeight; //6.1
             }
 
             // STEP 7 - Can't happen for this implementation but left in source to match Keith Schwarz's algorithm

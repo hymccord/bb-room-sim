@@ -6,20 +6,22 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        int numRuns = 100_000;
+        int numRuns = 500;
         var runner = new RoomRunner(
             numRuns,
             new IRoomStrategy[]
             {
-                new NoobStrat(),
+                new NoobStrat(), // Leave on first room. This should prove that the room visits == room distribution
                 new BailOnLower(),
                 new CoastTilExtremeOrBetter(),
                 new CoastTilUltimate(),
             },
             new IRoomDistributionProvider[]
             {
-                new DefaultRoomDistribution(),
-                new GreatHallRoomDistribution(),
+                // numbers are just guesses, not accurate
+                new DefaultRoomDistribution(), // 4, 3, 2, 1
+                new GreatHallRoomDistribution(), // 45, 35, 15, 5
+                new KeyedGreatHallRoomDistribution(), // 0, 70, 20, 10
             }
         );
 
@@ -31,7 +33,7 @@ class RoomRunner
 {
     private readonly IRoomStrategy[] _roomStrategies;
     private readonly IEnumerable<IRoomDistributionProvider> _roomDistributionProviders;
-    private int _numRuns;
+    private readonly int _numRuns;
 
     public RoomRunner(int numRuns, IRoomStrategy[] roomStrategies, IRoomDistributionProvider[] roomDistributionProviders)
     {
@@ -50,24 +52,15 @@ class RoomRunner
             var writer = new StrategyWriter(distribution.Name);
             writers.Add(writer);
 
+            // Logging for debug/visibility
             var rooms = distribution.GetRoomDistributions();
-            writer.WriteResult("Room Distribution",
-                rooms.GetWeightOf(RoomLevel.Standard),
-                rooms.GetWeightOf(RoomLevel.Super),
-                rooms.GetWeightOf(RoomLevel.Extreme),
-                rooms.GetWeightOf(RoomLevel.Ultimate)
-            );
-
+            writer.WriteResult("Room Distribution",rooms.GetWeightOf(RoomLevel.Standard),rooms.GetWeightOf(RoomLevel.Super),rooms.GetWeightOf(RoomLevel.Extreme),rooms.GetWeightOf(RoomLevel.Ultimate));
             await Console.Out.WriteLineAsync(
                 $"""
-                {string.Format("{0}: {1:P},{2:P},{3:P},{4:P}", distribution.Name,
-                rooms.GetWeightOf(RoomLevel.Standard) / (double)rooms.TotalWeight,
-                rooms.GetWeightOf(RoomLevel.Super) / (double)rooms.TotalWeight,
-                rooms.GetWeightOf(RoomLevel.Extreme) / (double)rooms.TotalWeight,
-                rooms.GetWeightOf(RoomLevel.Ultimate) / (double)rooms.TotalWeight
-                )}
+                {string.Format("{0}: {1:P},{2:P},{3:P},{4:P}", distribution.Name,rooms.GetWeightOf(RoomLevel.Standard) / (double)rooms.TotalWeight,rooms.GetWeightOf(RoomLevel.Super) / (double)rooms.TotalWeight,rooms.GetWeightOf(RoomLevel.Extreme) / (double)rooms.TotalWeight,rooms.GetWeightOf(RoomLevel.Ultimate) / (double)rooms.TotalWeight)}
                 """);
 
+            // queue all the strategies for parallel execution
             foreach (IRoomStrategy strategy in _roomStrategies)
             {
                 tasks.Add(Task.Run(async () => await RunStrategy(writer, distribution, strategy)));
@@ -108,11 +101,7 @@ class RoomRunner
             }
         }
 
-        writer.WriteResult(strategy.Name,
-            roomCounts[RoomLevel.Standard],
-            roomCounts[RoomLevel.Super],
-            roomCounts[RoomLevel.Extreme],
-            roomCounts[RoomLevel.Ultimate]);
+        writer.WriteResult(strategy.Name, roomCounts[RoomLevel.Standard], roomCounts[RoomLevel.Super], roomCounts[RoomLevel.Extreme], roomCounts[RoomLevel.Ultimate]);
 
         double roomSum = roomCounts.Sum(kvp => kvp.Value);
         await Console.Out.WriteLineAsync(
@@ -124,6 +113,7 @@ class RoomRunner
         );
     }
 
+    // Helps write results to CSV
     private class StrategyWriter : IDisposable
     {
         private StreamWriter _stream;
