@@ -51,12 +51,22 @@ class RoomRunner
             writers.Add(writer);
 
             var rooms = distribution.GetRoomDistributions();
-            writer.WriteResult("Default Distribution",
+            writer.WriteResult("Room Distribution",
                 rooms.GetWeightOf(RoomLevel.Standard),
                 rooms.GetWeightOf(RoomLevel.Super),
                 rooms.GetWeightOf(RoomLevel.Extreme),
                 rooms.GetWeightOf(RoomLevel.Ultimate)
             );
+
+            await Console.Out.WriteLineAsync(
+                $"""
+                {string.Format("{0}: {1:P},{2:P},{3:P},{4:P}", distribution.Name,
+                rooms.GetWeightOf(RoomLevel.Standard) / (double)rooms.TotalWeight,
+                rooms.GetWeightOf(RoomLevel.Super) / (double)rooms.TotalWeight,
+                rooms.GetWeightOf(RoomLevel.Extreme) / (double)rooms.TotalWeight,
+                rooms.GetWeightOf(RoomLevel.Ultimate) / (double)rooms.TotalWeight
+                )}
+                """);
 
             foreach (IRoomStrategy strategy in _roomStrategies)
             {
@@ -104,14 +114,12 @@ class RoomRunner
             roomCounts[RoomLevel.Extreme],
             roomCounts[RoomLevel.Ultimate]);
 
+        double roomSum = roomCounts.Sum(kvp => kvp.Value);
         await Console.Out.WriteLineAsync(
             $"""
             Done. Distribution: '{roomDistributionProvider.Name}', Strategy: '{strategy.Name}'");
-            {string.Format("{0},{1},{2},{3},{4}", strategy.Name,
-            roomCounts[RoomLevel.Standard],
-            roomCounts[RoomLevel.Super],
-            roomCounts[RoomLevel.Extreme],
-            roomCounts[RoomLevel.Ultimate])}
+            {string.Format("{0},{1},{2},{3},{4}", strategy.Name, roomCounts[RoomLevel.Standard], roomCounts[RoomLevel.Super], roomCounts[RoomLevel.Extreme], roomCounts[RoomLevel.Ultimate])}
+            {string.Format("{0:P},{1:P},{2:P},{3:P}", roomCounts[RoomLevel.Standard] / roomSum, roomCounts[RoomLevel.Super] / roomSum, roomCounts[RoomLevel.Extreme] / roomSum, roomCounts[RoomLevel.Ultimate] / roomSum)}
             """
         );
     }

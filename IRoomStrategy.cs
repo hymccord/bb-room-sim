@@ -14,7 +14,7 @@ class NoobStrat : IRoomStrategy
 
 class BailOnLower : IRoomStrategy
 {
-    public string Name => "Leave on lower floor";
+    public string Name => "Leave if next is lower floor";
 
     public bool ShouldAdvance(RoomLevel currentRoom, RoomLevel nextRoom)
     {
@@ -24,7 +24,7 @@ class BailOnLower : IRoomStrategy
 
 class CoastTilExtremeOrBetter : IRoomStrategy
 {
-    public string Name => "Extreme is pretty good.";
+    public string Name => "Extreme is good enough.";
 
     public bool ShouldAdvance(RoomLevel currentRoom, RoomLevel nextRoom)
     {
@@ -34,7 +34,7 @@ class CoastTilExtremeOrBetter : IRoomStrategy
 
 class CoastTilUltimate : IRoomStrategy
 {
-    public string Name => "ULTIMATE BEANZ ONLY";
+    public string Name => "Ultimate! <<Insert 4 chevrons here>>";
 
     public bool ShouldAdvance(RoomLevel currentRoom, RoomLevel nextRoom)
     {
