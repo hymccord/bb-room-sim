@@ -1,4 +1,4 @@
-﻿using KaimiraGames;
+using KaimiraGames;
 
 namespace bbsurvivor;
 
@@ -6,12 +6,13 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        int numRuns = 500;
+        int numRuns = 10000;
         var runner = new RoomRunner(
             numRuns,
             new IRoomStrategy[]
             {
                 new NoobStrat(), // Leave on first room. This should prove that the room visits == room distribution
+                new QuickTurnaround(),
                 new BailOnLower(),
                 new CoastTilExtremeOrBetter(),
                 new CoastTilUltimate(),

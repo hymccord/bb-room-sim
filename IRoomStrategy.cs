@@ -1,4 +1,4 @@
-﻿namespace bbsurvivor;
+namespace bbsurvivor;
 interface IRoomStrategy
 {
     string Name { get; }
@@ -10,6 +10,15 @@ class NoobStrat : IRoomStrategy
     public string Name => "Take First Room";
 
     public bool ShouldAdvance(RoomLevel currentRoom, RoomLevel nextRoom) => false;
+}
+
+class QuickTurnaround : IRoomStrategy {
+    public string Name => "Leave if current and next room are <= Super";
+
+    public bool ShouldAdvance(RoomLevel currentRoom, RoomLevel nextRoom)
+    {
+        return currentRoom <= RoomLevel.Super && nextRoom <= RoomLevel.Super;
+    }
 }
 
 class BailOnLower : IRoomStrategy
